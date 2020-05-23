@@ -2,7 +2,7 @@
 name = "async-fsw"
 description = "Cross-platform asynchronous filesystem notification library for Rust."
 license = "MIT"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Kristijan Sedlak <xpepermint@gmail.com>"]
 edition = "2018"
 documentation = "https://github.com/xpepermint/async-fsw"
@@ -11,7 +11,7 @@ repository = "https://github.com/xpepermint/async-fsw"
 
 [dependencies]
 notify = "5.0.0-pre.2"
-async-std = { version = "1.5.0", features = ["unstable"] }
+async-std = { version = "^1.6.0", features = ["unstable"] }
 
 [dev-dependencies]
-async-std = { version = "1.5.0", features = ["attributes"] }
+async-std = { version = "^1.6.0", features = ["attributes"] }

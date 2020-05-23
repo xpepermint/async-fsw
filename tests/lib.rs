@@ -12,11 +12,11 @@ async fn observes_path() {
         fs::write("/tmp/foo.txt", b"Lorem ipsum").await.unwrap();
     });
     
-    let mut event: Option<Event> = None;
-    while let Some(e) = w.incomming().recv().await {
+    let mut event = None;
+    while let Ok(e) = w.incomming().recv().await {
         event = Some(e);
         break;
     }
 
-    assert_eq!(event.is_some(), true);
+    assert!(event.is_some());
 }
