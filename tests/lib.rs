@@ -1,6 +1,6 @@
 use async_std::fs;
 use async_std::task;
-use async_fsw::{Watcher, WatchMode, Event};
+use async_fsw::{Watcher, WatchMode};
 
 #[async_std::test]
 async fn observes_path() {
