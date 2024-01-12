@@ -12,6 +12,7 @@ repository = "https://github.com/xpepermint/async-fsw"
 [dependencies]
 notify = "5.0.0-pre.2"
 async-std = { version = "^1.6.0", features = ["unstable"] }
+anyhow = "1.0.79"
 
 [dev-dependencies]
 async-std = { version = "^1.6.0", features = ["attributes"] }
