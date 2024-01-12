@@ -1,10 +1,13 @@
-use std::collections::HashMap;
-use std::collections::hash_map::RandomState;
+use async_std::channel::{bounded, Receiver, Sender};
 use async_std::task;
-use async_std::sync::{channel, Sender, Receiver};
-use notify::{RecommendedWatcher, Watcher as FsWatcher, RecursiveMode};
-pub use notify::event::{Event, EventKind, AccessKind, AccessMode, CreateKind,
-    ModifyKind, DataChange, MetadataKind, RenameMode, RemoveKind};
+pub use notify::event::{
+    AccessKind, AccessMode, CreateKind, DataChange, Event, EventKind, MetadataKind, ModifyKind,
+    RemoveKind, RenameMode,
+};
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher as FsWatcher};
+use std::collections::hash_map::RandomState;
+use std::collections::HashMap;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct Watcher {
@@ -13,11 +16,10 @@ pub struct Watcher {
 }
 
 impl Watcher {
-
     pub fn new() -> Self {
         Self {
             paths: HashMap::with_hasher(RandomState::default()),
-            channel: channel(1),
+            channel: bounded(1),
         }
     }
 
@@ -47,21 +49,29 @@ impl Watcher {
     pub async fn observe(&self) -> Result<Receiver<Event>, std::io::Error> {
         let paths = self.paths.clone();
         let (sender, receiver) = self.channel.clone();
-    
+
         task::spawn_blocking(move || {
             let (tx, rx) = std::sync::mpsc::channel();
-            let mut watcher: RecommendedWatcher = FsWatcher::new_immediate(move |res| { tx.send(res).unwrap() }).unwrap();
+            let mut watcher: RecommendedWatcher =
+                FsWatcher::new(move |res| tx.send(res).unwrap(), Config::default()).unwrap();
             for (path, mode) in paths {
-                 watcher.watch(path, match mode {
-                    WatchMode::Recursive => RecursiveMode::Recursive,
-                    _ => RecursiveMode::NonRecursive,
-                }).unwrap();
+                let path = std::path::PathBuf::from_str(&path)?;
+                watcher
+                    .watch(
+                        path.as_path(),
+                        match mode {
+                            WatchMode::Recursive => RecursiveMode::Recursive,
+                            _ => RecursiveMode::NonRecursive,
+                        },
+                    )
+                    .unwrap();
             }
-            for e in rx {
-                task::block_on(async { sender.send(e.unwrap()).await });
+            while let Ok(Ok(e)) = rx.recv() {
+                task::block_on(async { sender.send(e).await })?;
             }
+            anyhow::Ok(())
         });
-    
+
         Ok(receiver)
     }
 }
